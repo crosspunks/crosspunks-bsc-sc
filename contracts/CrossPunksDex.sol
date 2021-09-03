@@ -91,7 +91,7 @@ contract CrossPunksDex is ERC721TokenReceiver {
 
     address payable internal _deployer;
 
-    CrossPunks private _crosspunks;
+    IERC721 private _crosspunks;
 
     // A record of punks that are offered for sale at a specific minimum value, and perhaps to a specific person
     mapping(uint256 => Offer) public punksOfferedForSale;
