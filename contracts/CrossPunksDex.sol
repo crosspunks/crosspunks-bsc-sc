@@ -1,77 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.12;
 
-library SafeMath {
-    /**
-     * @dev Multiplies two numbers, throws on overflow.
-     */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
-        if (a == 0) {
-            return 0;
-        }
-        c = a * b;
-        require(c / a == b);
-        return c;
-    }
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
-    /**
-     * @dev Integer division of two numbers, truncating the quotient.
-     */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        // assert(b > 0); // Solidity automatically throws when dividing by 0
-        // uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn"t hold
-        return a / b;
-    }
-
-    /**
-     * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
-     */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a);
-        return a - b;
-    }
-
-    /**
-     * @dev Adds two numbers, throws on overflow.
-     */
-    function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
-        c = a + b;
-        require(c >= a);
-        return c;
-    }
-}
-
-interface ERC721TokenReceiver {
-    function onERC721Received(
-        address _operator,
-        address _from,
-        uint256 _tokenId,
-        bytes calldata _data
-    ) external returns (bytes4);
-}
-
-interface CrossPunks {
-    function ownerOf(uint256 tokenId) external view returns (address owner);
-
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) external;
-
-    function getApproved(uint256 tokenId)
-        external
-        view
-        returns (address operator);
-
-    function isApprovedForAll(address owner, address operator)
-        external
-        view
-        returns (bool);
-}
-
-contract CrossPunksDex is ERC721TokenReceiver {
+contract CrossPunksDex is IERC721Receiver {
     struct Offer {
         bool isForSale;
         uint256 punkIndex;
@@ -148,7 +82,7 @@ contract CrossPunksDex is ERC721TokenReceiver {
 
     constructor(address crosspunks) public {
         _deployer = msg.sender;
-        _crosspunks = CrossPunks(crosspunks);
+        _crosspunks = IERC721(crosspunks);
     }
 
     function pauseMarket(bool _paused) external onlyDeployer {
@@ -226,7 +160,7 @@ contract CrossPunksDex is ERC721TokenReceiver {
 
         _crosspunks.safeTransferFrom(address(this), msg.sender, punkIndex);
 
-        Transfer(seller, msg.sender, 1);
+        emit Transfer(seller, msg.sender, 1);
 
         punksOfferedForSale[punkIndex] = Offer(
             false,
@@ -238,29 +172,26 @@ contract CrossPunksDex is ERC721TokenReceiver {
 
         emit PunkNoLongerForSale(punkIndex);
 
-        (bool success, ) = address(uint160(seller)).call.value(msg.value)("");
+        Bid memory bid = punkBids[punkIndex];
+
+        if (bid.hasBid) {
+            punkBids[punkIndex] = Bid(false, punkIndex, address(0), 0);
+
+            (bool success, ) = address(uint160(bid.bidder)).call{ value: bid.value }("");
+            require(
+                success,
+                "Address: unable to send value, recipient may have reverted"
+            );
+        }
+
+        (bool success, ) = address(uint160(seller)).call{ value: msg.value }("");
 
         require(
             success,
             "Address: unable to send value, recipient may have reverted"
         );
 
-        PunkBought(punkIndex, msg.value, seller, msg.sender);
-
-        Bid memory bid = punkBids[punkIndex];
-
-        if (bid.hasBid) {
-            punkBids[punkIndex] = Bid(false, punkIndex, address(0), 0);
-
-            (bool success, ) = address(uint160(bid.bidder)).call.value(
-                bid.value
-            )("");
-
-            require(
-                success,
-                "Address: unable to send value, recipient may have reverted"
-            );
-        }
+        emit PunkBought(punkIndex, msg.value, seller, msg.sender);
     }
 
     function enterBidForPunk(uint256 punkIndex) public payable reentrancyGuard {
@@ -279,20 +210,18 @@ contract CrossPunksDex is ERC721TokenReceiver {
             "you can not bid lower than last bid"
         );
 
+        punkBids[punkIndex] = Bid(true, punkIndex, msg.sender, msg.value);
+
         if (existing.value > 0) {
             // Refund the failing bid
-            (bool success, ) = address(uint160(existing.bidder)).call.value(
-                existing.value
-            )("");
+            (bool success, ) = address(uint160(existing.bidder)).call{ value: existing.value }("");
             require(
                 success,
                 "Address: unable to send value, recipient may have reverted"
             );
         }
 
-        punkBids[punkIndex] = Bid(true, punkIndex, msg.sender, msg.value);
-
-        PunkBidEntered(punkIndex, msg.value, msg.sender);
+        emit PunkBidEntered(punkIndex, msg.value, msg.sender);
     }
 
     function acceptBidForPunk(uint256 punkIndex, uint256 minPrice)
@@ -313,7 +242,7 @@ contract CrossPunksDex is ERC721TokenReceiver {
 
         _crosspunks.safeTransferFrom(address(this), bid.bidder, punkIndex);
 
-        Transfer(seller, bid.bidder, 1);
+        emit Transfer(seller, bid.bidder, 1);
 
         punksOfferedForSale[punkIndex] = Offer(
             false,
@@ -325,15 +254,13 @@ contract CrossPunksDex is ERC721TokenReceiver {
 
         punkBids[punkIndex] = Bid(false, punkIndex, address(0), 0);
 
-        (bool success, ) = address(uint160(offer.seller)).call.value(bid.value)(
-            ""
-        );
+        (bool success, ) = address(uint160(offer.seller)).call{ value: bid.value }("");
         require(
             success,
             "Address: unable to send value, recipient may have reverted"
         );
 
-        PunkBought(punkIndex, bid.value, seller, bid.bidder);
+        emit PunkBought(punkIndex, bid.value, seller, bid.bidder);
     }
 
     function withdrawBidForPunk(uint256 punkIndex) public reentrancyGuard {
@@ -347,7 +274,7 @@ contract CrossPunksDex is ERC721TokenReceiver {
         punkBids[punkIndex] = Bid(false, punkIndex, address(0), 0);
 
         // Refund the bid money
-        (bool success, ) = address(uint160(msg.sender)).call.value(amount)("");
+        (bool success, ) = address(uint160(msg.sender)).call{ value: amount }("");
 
         require(
             success,
@@ -382,9 +309,7 @@ contract CrossPunksDex is ERC721TokenReceiver {
             punkBids[punkIndex] = Bid(false, punkIndex, address(0), 0);
 
             // Refund the bid money
-            (bool success, ) = address(uint160(bid.bidder)).call.value(
-                bid.value
-            )("");
+            (bool success, ) = address(uint160(bid.bidder)).call{ value: bid.value }("");
 
             require(
                 success,
