@@ -20,11 +20,6 @@ contract('CrossPunks', (accounts) => {
         assert.equal(symbol, "CP");
     });
 
-    // it('has correct start sale', async () => {
-    //     await expectRevert(this.cp.mintNFTAirDrop(1, 0, { from: owner, value: 1 }), 'Sale is not start');
-    //     await expectRevert(this.cp.initializeOwners([owner], 1, { from: owner }), 'Sale is not start');
-    // });
-
     it('has correct mint 1 NFT', async () => {
         await expectRevert(this.cp.mintNFT(1, { from: recipient, value: ether('0.1') }), 'Sale is not start');
 
