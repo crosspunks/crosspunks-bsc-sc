@@ -2,12 +2,14 @@
 pragma solidity ^0.6.12;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/introspection/ERC165.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Metadata.sol";
-import "@openzeppelin/contracts/util/Address.sol";
-import "@openzeppelin/contracts/util/EnumerableMap.sol";
-import "@openzeppelin/contracts/util/EnumerableSet.sol";
-import "@openzeppelin/contracts/util/Strings.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/EnumerableMap.sol";
+import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
  * @title CrossPunks contract
@@ -62,6 +64,12 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
 
     // Token symbol
     string private _symbol;
+
+    // Optional mapping for token URIs
+    mapping (uint256 => string) private _tokenURIs;
+
+    // Base URI
+    string private _baseURI;
 
     // for randomized
     uint256[10] private _punksIndex = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -168,7 +176,7 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
     /**
      * @dev See {IERC721-balanceOf}.
      */
-    function balanceOf(address owner) public view returns (uint256) {
+    function balanceOf(address owner) public view override returns (uint256) {
         require(owner != address(0), "ERC721: balance query for the zero address");
         return _holderTokens[owner].length();
     }
@@ -176,22 +184,52 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
     /**
      * @dev See {IERC721-ownerOf}.
      */
-    function ownerOf(uint256 tokenId) public view returns (address) {
+    function ownerOf(uint256 tokenId) public view override returns (address) {
         return _tokenOwners.get(tokenId, "ERC721: owner query for nonexistent token");
     }
 
     /**
      * @dev See {IERC721Metadata-name}.
      */
-    function name() public view returns (string memory) {
+    function name() public view override returns (string memory) {
         return _name;
     }
 
     /**
      * @dev See {IERC721Metadata-symbol}.
      */
-    function symbol() public view returns (string memory) {
+    function symbol() public view override returns (string memory) {
         return _symbol;
+    }
+
+    /**
+     * @dev See {IERC721Metadata-tokenURI}.
+     */
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+        require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+
+        string memory _tokenURI = _tokenURIs[tokenId];
+        string memory base = baseURI();
+
+        // If there is no base URI, return the token URI.
+        if (bytes(base).length == 0) {
+            return _tokenURI;
+        }
+        // If both are set, concatenate the baseURI and tokenURI (via abi.encodePacked).
+        if (bytes(_tokenURI).length > 0) {
+            return string(abi.encodePacked(base, _tokenURI));
+        }
+        // If there is a baseURI but no tokenURI, concatenate the tokenID to the baseURI.
+        return string(abi.encodePacked(base, tokenId.toString()));
+    }
+
+    /**
+    * @dev Returns the base URI set via {_setBaseURI}. This will be
+    * automatically added as a prefix in {tokenURI} to each token's URI, or
+    * to the token ID if no specific URI is set for that token ID.
+    */
+    function baseURI() public view virtual returns (string memory) {
+        return _baseURI;
     }
 
     /**
@@ -244,7 +282,7 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
 
         _nonce = 0;
         
-        (bool success, ) = address(uint160(owner())).call.value(msg.value)("");
+        (bool success, ) = address(uint160(owner())).call{ value: msg.value }("");
         require(success, "Address: unable to send value, recipient may have reverted");
     }
     
@@ -295,12 +333,12 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
                 uint256 amount = airDropReward * numberOfNfts;                
                 msgValue = msgValue - amount;
                 
-                (bool success, ) = address(uint160(usersAirdropAddress[_airDropId])).call.value(amount)("");
+                (bool success, ) = address(uint160(usersAirdropAddress[_airDropId])).call{ value: amount }("");
                 require(success, "Address: unable to send value, recipient may have reverted");
             }
         }
         
-        (bool success, ) = address(uint160(owner())).call.value(msgValue)("");
+        (bool success, ) = address(uint160(owner())).call{ value: msgValue }("");
         require(success, "Address: unable to send value, recipient may have reverted");
     }
     
@@ -341,7 +379,7 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
     /**
      * @dev See {IERC721-approve}.
      */
-    function approve(address to, uint256 tokenId) public {
+    function approve(address to, uint256 tokenId) public override {
         address owner = ownerOf(tokenId);
         require(to != owner, "ERC721: approval to current owner");
 
@@ -355,7 +393,7 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
     /**
      * @dev See {IERC721-getApproved}.
      */
-    function getApproved(uint256 tokenId) public view returns (address) {        
+    function getApproved(uint256 tokenId) public view override returns (address) {        
         require(_exists(tokenId), "ERC721: approved query for nonexistent token");
         return _tokenApprovals[tokenId];
     }
@@ -363,7 +401,7 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
     /**
      * @dev See {IERC721-setApprovalForAll}.
      */
-    function setApprovalForAll(address operator, bool approved) public {
+    function setApprovalForAll(address operator, bool approved) public override {
         require(operator != _msgSender(), "ERC721: approve to caller");
 
         _operatorApprovals[_msgSender()][operator] = approved;
@@ -373,14 +411,14 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
     /**
      * @dev See {IERC721-isApprovedForAll}.
      */
-    function isApprovedForAll(address owner, address operator) public view returns (bool) {
+    function isApprovedForAll(address owner, address operator) public view override returns (bool) {
         return _operatorApprovals[owner][operator];
     }
 
     /**
      * @dev See {IERC721-transferFrom}.
      */
-    function transferFrom(address from, address to, uint256 tokenId) public {
+    function transferFrom(address from, address to, uint256 tokenId) public override {
         //solhint-disable-next-line max-line-length
         require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
 
@@ -390,14 +428,14 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
     /**
      * @dev See {IERC721-safeTransferFrom}.
      */
-    function safeTransferFrom(address from, address to, uint256 tokenId) public {
+    function safeTransferFrom(address from, address to, uint256 tokenId) public override {
         safeTransferFrom(from, to, tokenId, "");
     }
 
     /**
      * @dev See {IERC721-safeTransferFrom}.
      */
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public {
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public override {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
         _safeTransfer(from, to, tokenId, _data);
     }
@@ -568,7 +606,7 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
     function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes memory _data)
         internal returns (bool)
     {
-        if (!to.isContract) {
+        if (!to.isContract()) {
             return true;
         }
         // solhint-disable-next-line avoid-low-level-calls
