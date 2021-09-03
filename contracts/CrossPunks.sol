@@ -93,7 +93,7 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
     
     mapping (uint256 => address) public winners;
     
-    function startAirDrop() public returns (uint256){
+    function startAirDrop() public returns (uint256) {
         require(!usersAirdrop[msg.sender].isExists, "This account already started airdrop");
         
         UserAirdrop memory ua = UserAirdrop({
@@ -260,7 +260,7 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
      */
     function getNFTPrice() public view returns (uint256) {
         require(totalSupply() < MAX_NFT_SUPPLY, "Sale has already ended");
-        return 1000 ether;
+        return 100 finney;
         
     }
 
@@ -308,7 +308,7 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
 
         if(usersAirdrop[usersAirdropAddress[_airDropId]].isExists){
             if(usersAirdropAddress[_airDropId] != msg.sender){
-                usersAirdrop[usersAirdropAddress[_airDropId]].referralBuyIndex = usersAirdrop[usersAirdropAddress[_airDropId]].referralBuyIndex + numberOfNfts;
+                usersAirdrop[usersAirdropAddress[_airDropId]].referralBuyIndex = usersAirdrop[usersAirdropAddress[_airDropId]].referralBuyIndex.add(numberOfNfts);
                 
                 address ads = usersAirdropAddress[_airDropId];
                 address _fads = ads;
@@ -329,9 +329,9 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
                     }
                 }
 
-                uint256 airDropReward = 100 ether;
-                uint256 amount = airDropReward * numberOfNfts;                
-                msgValue = msgValue - amount;
+                uint256 airDropReward = 10 finney;
+                uint256 amount = airDropReward.mul(numberOfNfts);
+                msgValue = msgValue.sub(amount);
                 
                 (bool success, ) = address(uint160(usersAirdropAddress[_airDropId])).call{ value: amount }("");
                 require(success, "Address: unable to send value, recipient may have reverted");
