@@ -21,6 +21,7 @@
     "ganache-cli": "^6.12.2",
     "solhint": "^3.3.4",
     "solidity-coverage": "^0.7.16",
-    "truffle": "^5.3.4"
+    "truffle": "^5.3.4",
+    "truffle-plugin-verify": "^0.5.9"
   }
 }
