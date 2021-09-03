@@ -7,8 +7,8 @@
     "build": "truffle compile",
     "migration": "truffle migration",
     "coverage": "node --max-old-space-size=4096 ./node_modules/.bin/truffle run coverage",
-    "deploy:rinkeby": "truffle deploy --network rinkeby --reset",
-    "deploy:mainnet": "truffle deploy --network mainnet --reset"
+    "deploy:testnet": "truffle deploy --network testnet --reset",
+    "deploy:bsc": "truffle deploy --network bsc --reset"
   },
   "author": "",
   "license": "GPL-3.0",
