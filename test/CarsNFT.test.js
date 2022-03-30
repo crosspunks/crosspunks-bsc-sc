@@ -142,6 +142,22 @@ contract('CarsNFT', async (accounts) => {
             assert.equal(balancePairCST, '961588616967956873657');
         });
 
+        it('has correct URI', async () => {
+            await this.tech.finishInitilizeOwners({ from: owner });
+
+            await this.tech.mintNFT(1, { from: recipient });
+
+            const tokenID = await this.tech.tokenOfOwnerByIndex(recipient, 0);
+            // console.log(tokenID);
+
+            let tokenURI = await this.tech.tokenURI(tokenID);
+            assert.equal(tokenURI, '');
+
+            await this.tech.setBaseURI("https://api.crosspunks.com/cars/", { from: owner });
+            tokenURI = await this.tech.tokenURI(tokenID);
+            assert.equal(tokenURI, 'https://api.crosspunks.com/cars/' + tokenID);
+        });
+
         // it('has correct mint 10000 NFT', async () => {
         //     await this.tech.finishInitilizeOwners({ from: owner });
 
