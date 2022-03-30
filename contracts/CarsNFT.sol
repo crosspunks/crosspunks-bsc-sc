@@ -554,7 +554,7 @@ contract CarsNFT is Ownable, ERC165, IERC721Metadata {
         bytes memory _data
     ) internal {
         _mint(to, tokenId);
-        require(totalSupply() < MAX_NFT_SUPPLY);
+        // require(totalSupply() < MAX_NFT_SUPPLY);
         require(
             _checkOnERC721Received(address(0), to, tokenId, _data),
             "ERC721: transfer to non ERC721Receiver implementer"

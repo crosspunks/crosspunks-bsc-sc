@@ -141,5 +141,20 @@ contract('CarsNFT', async (accounts) => {
             assert.equal(balancePairBUSD, '1060000000000000000000');
             assert.equal(balancePairCST, '961588616967956873657');
         });
+
+        // it('has correct mint 10000 NFT', async () => {
+        //     await this.tech.finishInitilizeOwners({ from: owner });
+
+        //     for (let i = 0; i < 500; i++) {
+        //         await this.tech.mintNFT(20, { from: recipient });
+        //         console.log("Minted " + (i * 20 + 20));
+        //     }
+
+        //     const balance = await this.tech.balanceOf(recipient);
+        //     assert.equal(balance, 10000);
+
+        //     const totalSupply = await this.tech.totalSupply();
+        //     assert.equal(totalSupply, 10000);
+        // }).timeout(1800000);
     });
 });
