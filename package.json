@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "test": "truffle test",
+    "pretest": "truffle compile && cp ./node_modules/@uniswap/v2-periphery/build/WETH9.json ./build/contracts/ && cp ./node_modules/@uniswap/v2-periphery/build/UniswapV2Router02.json ./build/contracts/ && cp ./node_modules/@uniswap/v2-core/build/UniswapV2Pair.json ./build/contracts/ && cp ./node_modules/@uniswap/v2-core/build/UniswapV2Factory.json ./build/contracts/",
     "lint": "solhint 'contracts/**/*.sol'",
     "build": "truffle compile",
     "migration": "truffle migration",
@@ -13,7 +14,9 @@
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
-    "@openzeppelin/contracts": "^3.4.0"
+    "@openzeppelin/contracts": "^3.4.0",
+    "@uniswap/v2-core": "^1.0.1",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0"
   },
   "devDependencies": {
     "@openzeppelin/test-helpers": "^0.5.11",
