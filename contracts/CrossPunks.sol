@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.12;
+pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/introspection/ERC165.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Metadata.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/EnumerableMap.sol";
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 /**
@@ -152,11 +152,6 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
     constructor (string memory name, string memory symbol) public {
         _name = name;
         _symbol = symbol;
-
-        // register the supported interfaces to conform to ERC721 via ERC165
-        _registerInterface(_INTERFACE_ID_ERC721);
-        _registerInterface(_INTERFACE_ID_ERC721_METADATA);
-        _registerInterface(_INTERFACE_ID_ERC721_ENUMERABLE);
     }
     
     function initializeOwners(address[] memory users, uint256 _column) public onlyOwner {
@@ -260,7 +255,7 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
      */
     function getNFTPrice() public view returns (uint256) {
         require(totalSupply() < MAX_NFT_SUPPLY, "Sale has already ended");
-        return 100 finney;
+        return 100 gwei;
         
     }
 
@@ -329,7 +324,7 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
                     }
                 }
 
-                uint256 airDropReward = 10 finney;
+                uint256 airDropReward = 10 gwei;
                 uint256 amount = airDropReward.mul(numberOfNfts);
                 msgValue = msgValue.sub(amount);
                 
@@ -347,7 +342,7 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
     */
     function withdraw() external onlyOwner {
         uint balance = address(this).balance;
-        msg.sender.transfer(balance);
+        payable(msg.sender).transfer(balance);
     }
 
 
@@ -355,7 +350,7 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
         if(_punksIndexExistsLength > 1){
             _nonce++;
             for (uint256 i = 0; i < _punksIndexExistsLength; i++) {
-                uint256 n = i + uint256(keccak256(abi.encodePacked(now + _nonce))) % (_punksIndexExistsLength - i);
+                uint256 n = i + uint256(keccak256(abi.encodePacked(block.timestamp + _nonce))) % (_punksIndexExistsLength - i);
                 uint256 temp = _punksIndexExists[n];
                 _punksIndexExists[n] = _punksIndexExists[i];
                 _punksIndexExists[i] = temp;

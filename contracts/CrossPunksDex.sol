@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.12;
+pragma solidity ^0.8.10;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
@@ -81,7 +80,7 @@ contract CrossPunksDex is IERC721Receiver {
     }
 
     constructor(address crosspunks) public {
-        _deployer = msg.sender;
+        _deployer = payable(msg.sender);
         _crosspunks = IERC721(crosspunks);
     }
 
@@ -135,7 +134,7 @@ contract CrossPunksDex is IERC721Receiver {
             toAddress
         );
 
-        PunkOffered(punkIndex, minSalePriceInBNB, toAddress);
+        emit PunkOffered(punkIndex, minSalePriceInBNB, toAddress);
     }
 
     function buyPunk(uint256 punkIndex) public payable reentrancyGuard {

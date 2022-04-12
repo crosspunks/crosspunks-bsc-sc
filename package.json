@@ -14,17 +14,27 @@
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
-    "@openzeppelin/contracts": "^3.4.0",
+    "@openzeppelin/contracts": "^4.5.0",
+    "@openzeppelin/test-helpers": "^0.5.15",
+    "@truffle/hdwallet-provider": "^2.0.5",
     "@uniswap/v2-core": "^1.0.1",
-    "@uniswap/v2-periphery": "^1.1.0-beta.0"
-  },
-  "devDependencies": {
-    "@openzeppelin/test-helpers": "^0.5.11",
-    "@truffle/hdwallet-provider": "^1.2.0",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "ganache-cli": "^6.12.2",
-    "solhint": "^3.3.4",
-    "solidity-coverage": "^0.7.16",
-    "truffle": "^5.3.4",
-    "truffle-plugin-verify": "^0.5.9"
-  }
+    "solhint": "^3.3.7",
+    "solidity-coverage": "^0.7.20",
+    "truffle-plugin-verify": "^0.5.25"
+  },
+  "description": "",
+  "main": ".solcover.js",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/crosspunks/crosspunks-bsc-sc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/crosspunks/crosspunks-bsc-sc/issues"
+  },
+  "homepage": "https://github.com/crosspunks/crosspunks-bsc-sc#readme"
 }

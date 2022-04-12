@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.12;
+pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/introspection/ERC165.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Metadata.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/EnumerableMap.sol";
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 interface PancakeRouterInterface {
@@ -37,11 +37,12 @@ interface PancakeRouterInterface {
  * @dev Extends ERC721 Non-Fungible Token Standard basic implementation
  */
 contract CarsNFT is Ownable, ERC165, IERC721Metadata {
-    using SafeMath for uint256;
     using Address for address;
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableMap for EnumerableMap.UintToAddressMap;
     using Strings for uint256;
+    using SafeMath for uint256;
+
 
     // Public variables
 
@@ -158,10 +159,6 @@ contract CarsNFT is Ownable, ERC165, IERC721Metadata {
         _addressCST = IERC20(addressCST);
         _addressPancakeRouter = PancakeRouterInterface(addressPancakeRouter);
 
-        // register the supported interfaces to conform to ERC721 via ERC165
-        _registerInterface(_INTERFACE_ID_ERC721);
-        _registerInterface(_INTERFACE_ID_ERC721_METADATA);
-        _registerInterface(_INTERFACE_ID_ERC721_ENUMERABLE);
     }
 
     function initializeOwners(address[] memory users, uint256 _column) public onlyOwner {
@@ -302,7 +299,7 @@ contract CarsNFT is Ownable, ERC165, IERC721Metadata {
             _nonce++;
             for (uint256 i = 0; i < _punksIndexExistsLength; i++) {
                 uint256 n = i +
-                    (uint256(keccak256(abi.encodePacked(now + _nonce))) %
+                    (uint256(keccak256(abi.encodePacked(block.timestamp + _nonce))) %
                         (_punksIndexExistsLength - i));
                 uint256 temp = _punksIndexExists[n];
                 _punksIndexExists[n] = _punksIndexExists[i];
