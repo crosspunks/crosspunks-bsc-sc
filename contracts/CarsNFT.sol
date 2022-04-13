@@ -276,7 +276,7 @@ contract CarsNFT is Ownable, ERC165, IERC721Metadata {
     /**
      * @dev Mints CrossPunk
      */
-    function mintNFT(uint256 numberOfNfts) public payable {
+    function mintNFT(uint256 numberOfNfts) public {
         require(_startSale, "Sale is not start");
         require(totalSupply() < MAX_NFT_SUPPLY, "Sale has already ended");
         require(numberOfNfts > 0, "numberOfNfts cannot be 0");
