@@ -3,8 +3,11 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract CrossPunksDex is IERC721Receiver {
+
+contract CrossPunksDex is IERC721Receiver, Ownable, ReentrancyGuard {
     struct Offer {
         bool isForSale;
         uint256 punkIndex;
@@ -22,85 +25,70 @@ contract CrossPunksDex is IERC721Receiver {
 
     bool public marketPaused;
 
-    address payable internal _deployer;
-
-    IERC721 private _crosspunks;
-
+    IERC721 private _nftCollection;
+    
     // A record of punks that are offered for sale at a specific minimum value, and perhaps to a specific person
     mapping(uint256 => Offer) public punksOfferedForSale;
 
     // A record of the highest punk bid
     mapping(uint256 => Bid) public punkBids;
 
+    //White list NFT collection 
+    mapping(address => bool) public nftColection;
+
     event Transfer(address indexed from, address indexed to, uint256 value);
     event PunkTransfer(
+        address addressCollection,
         address indexed from,
         address indexed to,
         uint256 punkIndex
     );
-    event PunkOffered(
+    event Offered(
         uint256 indexed punkIndex,
         uint256 minValue,
         address indexed toAddress
     );
-    event PunkBidEntered(
+    event NftBidEntered(
         uint256 indexed punkIndex,
         uint256 value,
         address indexed fromAddress
     );
-    event PunkBidWithdrawn(
+    event NftBidWithdrawn(
         uint256 indexed punkIndex,
         uint256 value,
         address indexed fromAddress
     );
-    event PunkBought(
+    event NftBought(
         uint256 indexed punkIndex,
         uint256 value,
         address indexed fromAddress,
         address indexed toAddress
     );
-    event PunkNoLongerForSale(uint256 indexed punkIndex);
+    event NftNoLongerForSale(uint256 indexed punkIndex);
+
     event ERC721Received(address operator, address _from, uint256 tokenId);
 
-    modifier onlyDeployer() {
-        require(msg.sender == _deployer, "Only deployer.");
-        _;
-    }
-
-    bool private _reentrancyLock = false;
-
-    /* Prevent a contract function from being reentrant-called. */
-    modifier reentrancyGuard() {
-        if (_reentrancyLock) {
-            revert();
-        }
-        _reentrancyLock = true;
-        _;
-        _reentrancyLock = false;
-    }
-
-    constructor(address crosspunks) public {
-        _deployer = payable(msg.sender);
-        _crosspunks = IERC721(crosspunks);
-    }
-
-    function pauseMarket(bool _paused) external onlyDeployer {
+    function pauseMarket(bool _paused) external onlyOwner {
         marketPaused = _paused;
     }
+    // function edit status NFT collection
+    function editWhiteList(address addressCollection, bool _status) external onlyOwner {
+        nftColection[addressCollection] = _status;
+    }
 
-    function offerPunkForSale(uint256 punkIndex, uint256 minSalePriceInBNB)
+    function offerForSale(uint256 punkIndex, uint256 minSalePriceInBNB)
         public
-        reentrancyGuard
+        nonReentrant
     {
         require(marketPaused == false, "Market Paused");
-        require(_crosspunks.ownerOf(punkIndex) == msg.sender, "Only owner");
+        require(_nftCollection.ownerOf(punkIndex) == msg.sender, "Only owner");
         require(
-            (_crosspunks.getApproved(punkIndex) == address(this) ||
-                _crosspunks.isApprovedForAll(msg.sender, address(this))),
+            (_nftCollection.getApproved(punkIndex) == address(this) ||
+                _nftCollection.isApprovedForAll(msg.sender, address(this))),
             "Not Approved"
         );
 
-        _crosspunks.safeTransferFrom(msg.sender, address(this), punkIndex);
+        _nftCollection.safeTransferFrom(msg.sender, address(this), punkIndex);
         punksOfferedForSale[punkIndex] = Offer(
             true,
             punkIndex,
@@ -109,23 +97,47 @@ contract CrossPunksDex is IERC721Receiver {
             address(0)
         );
 
-        emit PunkOffered(punkIndex, minSalePriceInBNB, address(0));
+        emit Offered(punkIndex, minSalePriceInBNB, address(0));
+    }
+
+    function offerPunkForSale(uint256 punkIndex, uint256 minSalePriceInBNB)
+        public
+        nonReentrant
+    {
+        require(marketPaused == false, "Market Paused");
+        require(_nftCollection.ownerOf(punkIndex) == msg.sender, "Only owner");
+        require(
+            (_nftCollection.getApproved(punkIndex) == address(this) ||
+                _nftCollection.isApprovedForAll(msg.sender, address(this))),
+            "Not Approved"
+        );
+
+        _nftCollection.safeTransferFrom(msg.sender, address(this), punkIndex);
+        punksOfferedForSale[punkIndex] = Offer(
+            true,
+            punkIndex,
+            msg.sender,
+            minSalePriceInBNB,
+            address(0)
+        );
+
+        emit Offered(punkIndex, minSalePriceInBNB, address(0));
     }
 
     function offerPunkForSaleToAddress(
         uint256 punkIndex,
         uint256 minSalePriceInBNB,
         address toAddress
-    ) public reentrancyGuard {
+    ) public nonReentrant {
         require(marketPaused == false, "Market Paused");
-        require(_crosspunks.ownerOf(punkIndex) == msg.sender, "Only owner");
+        require(_nftCollection.ownerOf(punkIndex) == msg.sender, "Only owner");
         require(
-            (_crosspunks.getApproved(punkIndex) == address(this) ||
-                _crosspunks.isApprovedForAll(msg.sender, address(this))),
+            (_nftCollection.getApproved(punkIndex) == address(this) ||
+                _nftCollection.isApprovedForAll(msg.sender, address(this))),
             "Not Approved"
         );
 
-        _crosspunks.safeTransferFrom(msg.sender, address(this), punkIndex);
+        _nftCollection.safeTransferFrom(msg.sender, address(this), punkIndex);
         punksOfferedForSale[punkIndex] = Offer(
             true,
             punkIndex,
@@ -134,10 +146,10 @@ contract CrossPunksDex is IERC721Receiver {
             toAddress
         );
 
-        emit PunkOffered(punkIndex, minSalePriceInBNB, toAddress);
+        emit Offered(punkIndex, minSalePriceInBNB, toAddress);
     }
 
-    function buyPunk(uint256 punkIndex) public payable reentrancyGuard {
+    function buyPunk(uint256 punkIndex) public payable nonReentrant {
         require(marketPaused == false, "Market Paused");
 
         Offer memory offer = punksOfferedForSale[punkIndex];
@@ -151,13 +163,13 @@ contract CrossPunksDex is IERC721Receiver {
         require(msg.sender != offer.seller, "You can not buy your punk");
         require(msg.value >= offer.minValue, "Didn't send enough BNB"); // Didn"t send enough BNB
         require(
-            address(this) == _crosspunks.ownerOf(punkIndex),
+            address(this) == _nftCollection.ownerOf(punkIndex),
             "Seller no longer owner of punk"
         ); // Seller no longer owner of punk
 
         address seller = offer.seller;
 
-        _crosspunks.safeTransferFrom(address(this), msg.sender, punkIndex);
+        _nftCollection.safeTransferFrom(address(this), msg.sender, punkIndex);
 
         emit Transfer(seller, msg.sender, 1);
 
@@ -169,7 +181,7 @@ contract CrossPunksDex is IERC721Receiver {
             address(0)
         );
 
-        emit PunkNoLongerForSale(punkIndex);
+        emit NftNoLongerForSale(punkIndex);
 
         Bid memory bid = punkBids[punkIndex];
 
@@ -190,10 +202,10 @@ contract CrossPunksDex is IERC721Receiver {
             "Address: unable to send value, recipient may have reverted"
         );
 
-        emit PunkBought(punkIndex, msg.value, seller, msg.sender);
+        emit NftBought(punkIndex, msg.value, seller, msg.sender);
     }
 
-    function enterBidForPunk(uint256 punkIndex) public payable reentrancyGuard {
+    function enterBidForPunk(uint256 punkIndex) public payable nonReentrant {
         require(marketPaused == false, "Market Paused");
 
         Offer memory offer = punksOfferedForSale[punkIndex];
@@ -220,12 +232,12 @@ contract CrossPunksDex is IERC721Receiver {
             );
         }
 
-        emit PunkBidEntered(punkIndex, msg.value, msg.sender);
+        emit NftBidEntered(punkIndex, msg.value, msg.sender);
     }
 
     function acceptBidForPunk(uint256 punkIndex, uint256 minPrice)
         public
-        reentrancyGuard
+        nonReentrant
     {
         require(marketPaused == false, "Market Paused");
 
@@ -239,7 +251,7 @@ contract CrossPunksDex is IERC721Receiver {
         require(bid.value > 0, "there is not any bid");
         require(bid.value >= minPrice, "bid is lower than min price");
 
-        _crosspunks.safeTransferFrom(address(this), bid.bidder, punkIndex);
+        _nftCollection.safeTransferFrom(address(this), bid.bidder, punkIndex);
 
         emit Transfer(seller, bid.bidder, 1);
 
@@ -259,10 +271,10 @@ contract CrossPunksDex is IERC721Receiver {
             "Address: unable to send value, recipient may have reverted"
         );
 
-        emit PunkBought(punkIndex, bid.value, seller, bid.bidder);
+        emit NftBought(punkIndex, bid.value, seller, bid.bidder);
     }
 
-    function withdrawBidForPunk(uint256 punkIndex) public reentrancyGuard {
+    function withdrawBidForPunk(uint256 punkIndex) public nonReentrant {
         Bid memory bid = punkBids[punkIndex];
 
         require(bid.hasBid == true, "There is not bid");
@@ -280,10 +292,10 @@ contract CrossPunksDex is IERC721Receiver {
             "Address: unable to send value, recipient may have reverted"
         );
 
-        emit PunkBidWithdrawn(punkIndex, bid.value, msg.sender);
+        emit NftBidWithdrawn(punkIndex, bid.value, msg.sender);
     }
 
-    function punkNoLongerForSale(uint256 punkIndex) public reentrancyGuard {
+    function punkNoLongerForSale(uint256 punkIndex) public nonReentrant {
         Offer memory offer = punksOfferedForSale[punkIndex];
 
         require(offer.isForSale == true, "punk is not for sale");
@@ -292,7 +304,7 @@ contract CrossPunksDex is IERC721Receiver {
 
         require(seller == msg.sender, "Only Owner");
 
-        _crosspunks.safeTransferFrom(address(this), msg.sender, punkIndex);
+        _nftCollection.safeTransferFrom(address(this), msg.sender, punkIndex);
 
         punksOfferedForSale[punkIndex] = Offer(
             false,
@@ -316,7 +328,7 @@ contract CrossPunksDex is IERC721Receiver {
             );
         }
 
-        emit PunkNoLongerForSale(punkIndex);
+        emit NftNoLongerForSale(punkIndex);
     }
 
     function onERC721Received(
