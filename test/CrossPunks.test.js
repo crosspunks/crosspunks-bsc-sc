@@ -67,20 +67,24 @@ contract('CrossPunks', (accounts) => {
         await expectRevert(this.cp.mintNFTAirDrop(0, id, { from: recipient, value: ether('0.1') }), 'numberOfNfts cannot be 0');
         await expectRevert(this.cp.mintNFTAirDrop(21, id, { from: recipient, value: ether('0.1') }), 'You may not buy more than 20 NFTs at once');
         await expectRevert(this.cp.mintNFTAirDrop(1, id, { from: recipient, value: ether('0.01') }), 'BNB value sent is not correct');
-
         const balanceOwner = await web3.eth.getBalance(owner);
         const balanceRef = await web3.eth.getBalance(ref);
 
         await this.cp.mintNFTAirDrop(1, id, { from: recipient, value: ether('0.1') });
+        console.log("Here1")
 
         const balance = await this.cp.balanceOf(recipient);
         assert.equal(balance, 1);
+        console.log("Here2")
 
         const newBalanceOwner = await web3.eth.getBalance(owner);
         assert.equal(newBalanceOwner, new BN(balanceOwner).add(ether('0.09')));
+        console.log("Here3")
 
         const newBalanceRef = await web3.eth.getBalance(ref);
         assert.equal(newBalanceRef, new BN(balanceRef).add(ether('0.01')));
+        console.log("Here4")
+
     });
 
     it('has correct mintNFTAirDrop 5 NFT', async () => {

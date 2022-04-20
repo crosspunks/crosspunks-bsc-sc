@@ -255,7 +255,7 @@ contract CrossPunks is Ownable, ERC165, IERC721Metadata {
      */
     function getNFTPrice() public view returns (uint256) {
         require(totalSupply() < MAX_NFT_SUPPLY, "Sale has already ended");
-        return 100 gwei;
+        return 100000000 gwei;
         
     }
 
