@@ -20,7 +20,7 @@ contract('CrossPunksDex', (accounts) => {
 
     });
 
-    it('offer for Sale NFT', async () => {
+    it('offer and Sale NFT', async () => {
         await this.cp.finishInitilizeOwners({ from: owner });
 
         await this.cp.mintNFT(10, { from: recipient, value: ether('1') });
