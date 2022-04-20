@@ -16,19 +16,26 @@ contract('CrossPunksDex', (accounts) => {
         this.nftCollection = await CrossPunks.new("nftCollection", "NFT", { from: owner });
         this.crossPunksDex = await CrossPunksDex.new(this.cst.address);
         await this.crossPunksDex.editWhiteList(this.cp.address, true);
+        await this.cst.mint(ref, 10000000000, {from: owner});
 
     });
 
-    it('has correct NFT', async () => {
+    it('offer for Sale NFT', async () => {
         await this.cp.finishInitilizeOwners({ from: owner });
 
         await this.cp.mintNFT(10, { from: recipient, value: ether('1') });
 
-        var temp = await this.cp.tokenByIndex(1);
+        var temp = await this.cp.tokenOfOwnerByIndex(recipient, 0);
         console.log(temp.toString());
         await this.cp.approve(this.crossPunksDex.address, temp.toNumber(), {from: recipient});
         await this.crossPunksDex.offerForSale(this.cp.address, temp.toNumber(), 1000, {from: recipient});
-
+        await this.cst.approve(this.crossPunksDex.address, 1000, {from: ref})
+        await this.crossPunksDex.buyPunk(this.cp.address, temp.toNumber(), {from: ref});
+        console.log((await this.cst.balanceOf(this.crossPunksDex.address)).toString());
+        console.log((await this.cst.balanceOf(recipient)).toString());
+        console.log((await this.cst.balanceOf(ref)).toString());
+        console.log((await this.cp.tokenOfOwnerByIndex(recipient, 0)).toString());
     });
 
+    
 });

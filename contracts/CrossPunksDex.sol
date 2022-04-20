@@ -146,7 +146,7 @@ contract CrossPunksDex is IERC721Receiver, Ownable, ReentrancyGuard {
             punkBids[addressCollection][punkIndex] = Bid(false, address(0), 0);
             _tokenSale.safeTransfer(seller, offer.minValue * 95 / 100);
         }
-
+        _tokenSale.safeIncreaseAllowance(seller, offer.minValue * 95 / 100);
         _tokenSale.safeTransferFrom(msg.sender, address(this), offer.minValue);
         _tokenSale.safeTransfer(seller, offer.minValue * 95 / 100);
 
