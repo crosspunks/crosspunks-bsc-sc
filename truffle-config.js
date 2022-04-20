@@ -1,7 +1,7 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 const TestRPC = require('ganache-cli');
 const HDWalletProvider = require('@truffle/hdwallet-provider');
-const { privKey, BSCSCANAPIKEY } = require('./env.json');
+const { privKey, BSCSCANAPIKEY, getblock } = require('./env.json');
 
 module.exports = {
   networks: {
@@ -18,10 +18,11 @@ module.exports = {
       timeoutBlocks: 20000,
     },
     bsc: {
-      provider: () => new HDWalletProvider(privKey, 'https://bsc-dataseed1.binance.org'),
+      provider: () => new HDWalletProvider(privKey, 'https://bsc.getblock.io/mainnet/?api_key=' + getblock),
       network_id: 56,
       confirmations: 2,
       skipDryRun: true,
+      networkCheckTimeout: 500000000,
       gasPrice: 10000000000,
     },
   },
