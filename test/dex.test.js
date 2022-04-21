@@ -29,12 +29,13 @@ contract('CrossPunksDex', (accounts) => {
         console.log(temp.toString());
         await this.cp.approve(this.crossPunksDex.address, temp.toNumber(), {from: recipient});
         await this.crossPunksDex.offerForSale(this.cp.address, temp.toNumber(), 1000, {from: recipient});
-        await this.cst.approve(this.crossPunksDex.address, 1000, {from: ref})
+        await this.cst.approve(this.crossPunksDex.address, 2000, {from: ref})
         await this.crossPunksDex.buyPunk(this.cp.address, temp.toNumber(), {from: ref});
-        console.log((await this.cst.balanceOf(this.crossPunksDex.address)).toString());
-        console.log((await this.cst.balanceOf(recipient)).toString());
-        console.log((await this.cst.balanceOf(ref)).toString());
-        console.log((await this.cp.tokenOfOwnerByIndex(recipient, 0)).toString());
+        
+        console.log((await this.cst.balanceOf(this.crossPunksDex.address)).toNumber());
+        console.log((await this.cst.balanceOf(recipient)).toNumber());
+        console.log((await this.cst.balanceOf(ref)).toNumber());
+        console.log((await this.cp.tokenOfOwnerByIndex(ref, 0)).toNumber());
     });
 
     

@@ -144,9 +144,9 @@ contract CrossPunksDex is IERC721Receiver, Ownable, ReentrancyGuard {
 
         if (bid.hasBid) {
             punkBids[addressCollection][punkIndex] = Bid(false, address(0), 0);
-            _tokenSale.safeTransfer(seller, offer.minValue * 95 / 100);
+            _tokenSale.safeTransfer(bid.bidder, bid.value);
         }
-        _tokenSale.safeIncreaseAllowance(seller, offer.minValue * 95 / 100);
+
         _tokenSale.safeTransferFrom(msg.sender, address(this), offer.minValue);
         _tokenSale.safeTransfer(seller, offer.minValue * 95 / 100);
 
@@ -217,6 +217,21 @@ contract CrossPunksDex is IERC721Receiver, Ownable, ReentrancyGuard {
         punkBids[addressCollection][punkIndex] = Bid(false, address(0), 0);
 
         emit NftBought(addressCollection, punkIndex, bid.value, seller, bid.bidder);
+    }
+
+    function withdrawBidForPunk(address addressCollection, uint256 punkIndex) public nonReentrant {
+        Bid memory bid = punkBids[addressCollection][punkIndex];
+
+        require(bid.hasBid == true, "There is not bid");
+        require(bid.bidder == msg.sender, "Only bidder can withdraw");
+
+        uint256 amount = bid.value;
+
+        punkBids[addressCollection][punkIndex] = Bid(false, address(0), 0);
+
+        _tokenSale.safeTransfer(bid.bidder, amount);
+
+        emit NftBidWithdrawn(punkIndex, bid.value, msg.sender);
     }
 
     function punkNoLongerForSale(address addressCollection, uint256 punkIndex) public nonReentrant {
