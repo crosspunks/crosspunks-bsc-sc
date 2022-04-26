@@ -93,7 +93,7 @@ contract CrossPunksDex is IERC721Receiver, Ownable, ReentrancyGuard {
         emit Offered(addressCollection, punkIndex, minSaleCST);
     }
 
-    function buyNft(address addressCollection, uint256 punkIndex) public payable nonReentrant pause(addressCollection) {
+    function buyNft(address addressCollection, uint256 punkIndex) public nonReentrant pause(addressCollection) {
 
         IERC721 collection = IERC721(addressCollection);
 

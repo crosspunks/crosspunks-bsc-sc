@@ -10,7 +10,7 @@ module.exports = {
       network_id: '*',
     },
     testnet: {
-      provider: () => new HDWalletProvider(privKey, 'https://data-seed-prebsc-1-s3.binance.org:8545'),
+      provider: () => new HDWalletProvider(privKey, 'https://data-seed-prebsc-1-s1.binance.org:8545/'),
       network_id: 97,
       confirmations: 2,
       skipDryRun: true,
