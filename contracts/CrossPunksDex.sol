@@ -33,22 +33,22 @@ contract CrossPunksDex is IERC721Receiver, Ownable, ReentrancyGuard {
         address addressCollection,
         address indexed from,
         address indexed to,
-        uint256 punkIndex
+        uint256 nftId
     );
     event Offered(
         address indexed addressCollection,
-        uint256 indexed punkIndex,
+        uint256 indexed nftId,
         uint256 minValue
     );
 
     event NftBought(
         address indexed addressCollection,
-        uint256 indexed punkIndex,
+        uint256 indexed nftId,
         uint256 value,
         address fromAddress,
         address indexed toAddress
     );
-    event NftNoLongerForSale(uint256 indexed punkIndex);
+    event NftNoLongerForSale(uint256 indexed nftId);
 
     event ERC721Received(address operator, address _from, uint256 tokenId);
 
@@ -70,78 +70,88 @@ contract CrossPunksDex is IERC721Receiver, Ownable, ReentrancyGuard {
         nftColection[addressCollection] = _status;
     }
 
-    function offerForSale(address addressCollection,uint256 punkIndex, uint256 minSaleCST)
+    function editPriceNft(address addressCollection, uint256 nftId, uint256 price) external pause(addressCollection) {
+        require(punksOfferedForSale[addressCollection][nftId].isForSale == true, "punk is not for sale"); // punk not actually for sale
+        require(punksOfferedForSale[addressCollection][nftId].seller == msg.sender, "Only Owner");
+        punksOfferedForSale[addressCollection][nftId] = Offer (
+            true,
+            msg.sender,
+            price
+        );
+    }
+
+    function offerForSale(address addressCollection,uint256 nftId, uint256 minSaleCST)
         public
         nonReentrant
         pause(addressCollection)
     {   
         IERC721 collection = IERC721(addressCollection);
-        require(collection.ownerOf(punkIndex) == msg.sender, "Only owner");
+        require(collection.ownerOf(nftId) == msg.sender, "Only Owner");
         require(
-            (collection.getApproved(punkIndex) == address(this) ||
+            (collection.getApproved(nftId) == address(this) ||
                 collection.isApprovedForAll(msg.sender, address(this))),
             "Not Approved"
         );
 
-        collection.safeTransferFrom(msg.sender, address(this), punkIndex);
-        punksOfferedForSale[addressCollection][punkIndex] = Offer(
+        collection.safeTransferFrom(msg.sender, address(this), nftId);
+        punksOfferedForSale[addressCollection][nftId] = Offer(
             true,
             msg.sender,
             minSaleCST
         );
 
-        emit Offered(addressCollection, punkIndex, minSaleCST);
+        emit Offered(addressCollection, nftId, minSaleCST);
     }
 
-    function buyNft(address addressCollection, uint256 punkIndex) public nonReentrant pause(addressCollection) {
+    function buyNft(address addressCollection, uint256 nftId) public nonReentrant pause(addressCollection) {
 
         IERC721 collection = IERC721(addressCollection);
 
-        Offer memory offer = punksOfferedForSale[addressCollection][punkIndex];
+        Offer memory offer = punksOfferedForSale[addressCollection][nftId];
 
         require(offer.isForSale == true, "punk is not for sale"); // punk not actually for sale
         require(msg.sender != offer.seller, "You can not buy your punk");
         require(_tokenSale.balanceOf(msg.sender) >= offer.minValue, "Didn't send enough CST"); // Didn"t send enough CST
         require(
-            address(this) == collection.ownerOf(punkIndex),
+            address(this) == collection.ownerOf(nftId),
             "Seller no longer owner of punk"
         ); 
 
         address seller = offer.seller;
         
-        collection.safeTransferFrom(address(this), msg.sender, punkIndex);
+        collection.safeTransferFrom(address(this), msg.sender, nftId);
         _tokenSale.safeTransferFrom(msg.sender, address(this), offer.minValue);
         _tokenSale.safeTransfer(seller, offer.minValue * 95 / 100);
         
-        emit NftTransfer(addressCollection, seller, msg.sender, punkIndex);
+        emit NftTransfer(addressCollection, seller, msg.sender, nftId);
 
-        punksOfferedForSale[addressCollection][punkIndex] = Offer(
+        punksOfferedForSale[addressCollection][nftId] = Offer(
             false,
             msg.sender,
             0
         );
 
-        emit NftBought(addressCollection, punkIndex, offer.minValue, seller, msg.sender);
+        emit NftBought(addressCollection, nftId, offer.minValue, seller, msg.sender);
     }
 
-    function withdrawNft(address addressCollection, uint256 punkIndex) public nonReentrant {
+    function withdrawNft(address addressCollection, uint256 nftId) public nonReentrant {
         
         IERC721 collection = IERC721(addressCollection);
         require(nftColection[addressCollection], "NFT not correct");
         
-        Offer memory offer = punksOfferedForSale[addressCollection][punkIndex];
+        Offer memory offer = punksOfferedForSale[addressCollection][nftId];
         require(offer.isForSale == true, "punk is not for sale");
         address seller = offer.seller;
         require(seller == msg.sender, "Only Owner");
-        collection.safeTransferFrom(address(this), msg.sender, punkIndex);
+        collection.safeTransferFrom(address(this), msg.sender, nftId);
 
-        punksOfferedForSale[addressCollection][punkIndex] = Offer(
+        punksOfferedForSale[addressCollection][nftId] = Offer(
             false,
             msg.sender,
             0
         );
 
-        emit NftNoLongerForSale(punkIndex);
+        emit NftNoLongerForSale(nftId);
     }
 
     function comissionToOwner() external onlyOwner {

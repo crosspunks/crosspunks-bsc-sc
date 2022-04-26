@@ -62,5 +62,17 @@ contract('CrossPunksDex', (accounts) => {
         await expectRevert(this.crossPunksDex.withdrawNft(this.cp.address, temp.toNumber(), { from: ref }), 'Only Owner');
         await this.crossPunksDex.withdrawNft(this.cp.address, temp.toNumber(), {from: recipient});
     });
+
+    it('edit Price', async () => {
+
+        var temp = await this.cp.tokenOfOwnerByIndex(recipient, 0);
+
+        await this.cp.approve(this.crossPunksDex.address, temp.toNumber(), {from: recipient});
+        await this.crossPunksDex.offerForSale(this.cp.address, temp.toNumber(), 1000, {from: recipient});
+        await expectRevert(this.crossPunksDex.editPriceNft(this.cp.address, temp.toNumber(), 10000, { from: ref }), 'Only Owner');
+        await this.crossPunksDex.editPriceNft(this.cp.address, temp.toNumber(), 10000, {from: recipient});
+        await expect((await this.crossPunksDex.punksOfferedForSale.call(this.cp.address, temp.toNumber())).minValue.toNumber()).equal(10000);
+
+    });
     
 });
