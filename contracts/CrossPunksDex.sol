@@ -7,17 +7,12 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./interface/ICrossPunkDex.sol";
 
 
-contract CrossPunksDex is IERC721Receiver, Ownable, ReentrancyGuard {
+contract CrossPunksDex is IERC721Receiver, Ownable, ReentrancyGuard, ICrossPunkDex {
     
     using SafeERC20 for IERC20;
-
-    struct Offer {
-        bool isForSale;
-        address seller;
-        uint256 minValue; // in CST
-    }
 
     bool public marketPaused;
 
@@ -29,28 +24,6 @@ contract CrossPunksDex is IERC721Receiver, Ownable, ReentrancyGuard {
     //White list NFT collection 
     mapping(address => bool) public nftColection;
 
-    event NftTransfer(
-        address addressCollection,
-        address indexed from,
-        address indexed to,
-        uint256 nftId
-    );
-    event Offered(
-        address indexed addressCollection,
-        uint256 indexed nftId,
-        uint256 minValue
-    );
-
-    event NftBought(
-        address indexed addressCollection,
-        uint256 indexed nftId,
-        uint256 value,
-        address fromAddress,
-        address indexed toAddress
-    );
-    event NftNoLongerForSale(uint256 indexed nftId);
-
-    event ERC721Received(address operator, address _from, uint256 tokenId);
 
     constructor(address tokenAddress){
         _tokenSale = IERC20(tokenAddress);
